@@ -91,10 +91,10 @@ w_PM <- matrix(NaN, nrow = P, ncol = NROW(h))
 R_PM <- matrix(NaN, nrow = P, ncol = NROW(h))
 ER_PM <- matrix(NaN, nrow = P, ncol = NROW(h))
 
-FC_PR <- array(NaN,c(P, ncol(GW_varset) + 1, NROW(h)))
-w_PR <- array(NaN,c(P, ncol(GW_varset) + 1, NROW(h)))
-R_PR <- array(NaN,c(P, ncol(GW_varset) + 1, NROW(h)))
-ER_PR <- array(NaN,c(P, ncol(GW_varset) + 1, NROW(h)))
+FC_PR <- array(NaN,c(P, ncol(GW_predictor) + 1, NROW(h)))
+w_PR <- array(NaN,c(P, ncol(GW_predictor) + 1, NROW(h)))
+R_PR <- array(NaN,c(P, ncol(GW_predictor) + 1, NROW(h)))
+ER_PR <- array(NaN,c(P, ncol(GW_predictor) + 1, NROW(h)))
 
 R_BH <- matrix(NaN, nrow = P, ncol = NROW(h))
 ER_BH <- matrix(NaN, nrow = P, ncol = NROW(h))
@@ -112,13 +112,13 @@ for(p in 1:P){
   for(j in 1:NROW(h)){
     
     # volatility
-    if(R+p-h[j] <= window -1){
+    if(R+p-h[j] <= window-1){
       
       FC_vol[p,j] <- sd(ER_h[1:(R+p-h[j]),j])
     
     }else{
       
-      FC_vol[p,j] <-  sd(ER_h[((R+p-h[j])-(window-1)):(R+p-h[j]),j])
+      FC_vol[p,j] <- sd(ER_h[((R+p-h[j])-(window-1)):(R+p-h[j]),j])
       
     }
     
@@ -126,8 +126,8 @@ for(p in 1:P){
     FC_PM[p,j] <- mean(ER_h[1:(R+p-h[j]),j])
     
     # Predictive regressions
-    for(i in 1:(ncol(GW_varset)+1)){
-      if(i < ncol(GW_varset)){
+    for(i in 1:(ncol(GW_predictor)+1)){
+      if(i <= ncol(GW_predictor)){
         
       X_i_j_p <- cbind(matrix(1, nrow = (R+(p-1)-h[j]), ncol = 1),
                        GW_predictor[1:(R+(p-1)-h[j]),i])
@@ -153,6 +153,44 @@ for(p in 1:P){
 }
 
 # Computing portfolio weights/returns ------------------------------------------
+
+for(j in 1:NROW(h)){
+  for(t in 1:(P/h[j])){
+   
+    FC_vol_j_t <- FC_vol[((t-1)*h[j]+1),j]
+    FC_PM_j_t <- FC_PM[((t-1)*h[j]+1),j]
+    
+    w_PM_j_t <- (1/RRA)*FC_PM_j_t/(FC_vol_j_t)^2
+    
+    ifelse(w_PM_j_t > w_UB,
+           w_PM[((t-1)*h[j]+1),j] <- w_UB,
+           ifelse(w_PM_j_t < w_LB,
+                  w_PM[((t-1)*h[j]+1),j] <- w_LB,
+                  w_PM[((t-1)*h[j]+1),j] <- w_PM_j_t))
+    
+    R_PM[((t-1)*h[j]+1),j] <- R_f_h[(R+(t-1)*h[j]+1),j] + w_PM[((t-1)*h[j]+1),j]*ER_h[(R+(t-1)*h[j]+1),j]
+    ER_PM[((t-1)*h[j]+1),j] <- R_PM[((t-1)*h[j]+1),j] - R_f_h[(R+(t-1)*h[j]+1),j]
+    
+    for(i in 1:ncol(FC_PR)){
+      
+      FC_PR_i_j_t <- FC_PR[((t-1)*h[j]+1),j]
+      w_PR_i_j_t <- (1/RRA)*FC_PR_i_j_t/(FC_vol_j_t)^2
+      
+      ifelse(w_PR_i_j_t > w_UB,
+             w_PR[((t-1)*h[j]+1),i,j] <- w_UB,
+             ifelse(w_PR_i_j_t < w_LB,
+                    w_PR[((t-1)*h[j]+1),i,j] <- w_LB,
+                    w_PR[((t-1)*h[j]+1),i,j] <- w_PR_i_j_t))
+      
+     R_PM[((t-1)*h[j]+1),j] <- R_f_h[(R+(t-1)*h[j]+1),j] + w_PM[((t-1)*h[j]+1),j]*ER_h[(R+(t-1)*h[j]+1),j]
+     ER_PM[((t-1)*h[j]+1),j] <- R_PM[((t-1)*h[j]+1),j] - R_f_h[(R+(t-1)*h[j]+1),j]
+      
+    }
+    
+    
+    
+  }
+}
 
 
 # Compute CER gains and Sharpe ratios for full OOS period ----------------------
