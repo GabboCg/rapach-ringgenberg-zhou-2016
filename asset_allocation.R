@@ -66,7 +66,7 @@ short_interest <- read.xlsx("data/Returns_short_interest_data.xlsx",
                   select(Date, log_EWSI)
 
 # Compute cumulative excess returns --------------------------------------------
-h <- c(1, 3, 6 , 12)
+h <- c(1, 3, 6, 12)
 
 ER_h <- matrix(NaN, nrow = nrow(equity_risk), ncol = NROW(h))
 R_f_h <- matrix(NaN, nrow = nrow(equity_risk), ncol = NROW(h))
@@ -227,6 +227,10 @@ for(j in 1:NROW(h)){
   
 }
 
+CER_gain
+Sharpe
+
+
 # Compute CER gains and Sharpe ratios for Global Financial Crisis period -------
 GFC_start <- (2006-1989)*12 + 1
 CER_gain_GFC <- matrix(NaN, nrow = (ncol(FC_PR)+1), ncol = NROW(h))
@@ -262,3 +266,4 @@ for(j in 1:NROW(h)){
   Sharpe_GFC[NROW(Sharpe_GFC),j] <- sqrt((12/h[j]))*mean(ER_BH_j)/sd(ER_BH_j)
   
 }
+
