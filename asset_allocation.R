@@ -106,7 +106,6 @@ w_LB <- -0.5
 w_UB <- 1.5
 
 # Compute out-of-sample forecasts ----------------------------------------------
-
 for(p in 1:P){
   print(p)
   for(j in 1:NROW(h)){
@@ -153,7 +152,6 @@ for(p in 1:P){
 }
 
 # Computing portfolio weights/returns ------------------------------------------
-
 for(j in 1:NROW(h)){
   for(t in 1:(P/h[j])){
    
@@ -173,7 +171,7 @@ for(j in 1:NROW(h)){
     
     for(i in 1:ncol(FC_PR)){
       
-      FC_PR_i_j_t <- FC_PR[((t-1)*h[j]+1),j]
+      FC_PR_i_j_t <- FC_PR[((t-1)*h[j]+1),i,j]
       w_PR_i_j_t <- (1/RRA)*FC_PR_i_j_t/(FC_vol_j_t)^2
       
       ifelse(w_PR_i_j_t > w_UB,
@@ -182,15 +180,85 @@ for(j in 1:NROW(h)){
                     w_PR[((t-1)*h[j]+1),i,j] <- w_LB,
                     w_PR[((t-1)*h[j]+1),i,j] <- w_PR_i_j_t))
       
-     R_PM[((t-1)*h[j]+1),j] <- R_f_h[(R+(t-1)*h[j]+1),j] + w_PM[((t-1)*h[j]+1),j]*ER_h[(R+(t-1)*h[j]+1),j]
-     ER_PM[((t-1)*h[j]+1),j] <- R_PM[((t-1)*h[j]+1),j] - R_f_h[(R+(t-1)*h[j]+1),j]
+     R_PR[((t-1)*h[j]+1),i,j] <- R_f_h[(R+(t-1)*h[j]+1),j] + w_PR[((t-1)*h[j]+1),i,j]*ER_h[(R+(t-1)*h[j]+1),j]
+     ER_PR[((t-1)*h[j]+1),i,j] <- R_PR[((t-1)*h[j]+1),i,j] - R_f_h[(R+(t-1)*h[j]+1),j]
       
     }
     
-    
+    R_BH[((t-1)*h[j]+1),j] <- R_f_h[(R+(t-1)*h[j]+1),j] + ER_h[(R+(t-1)*h[j]+1),j]
+    ER_BH[((t-1)*h[j]+1),j] <- ER_h[(R+(t-1)*h[j]+1),j]
     
   }
 }
 
 
 # Compute CER gains and Sharpe ratios for full OOS period ----------------------
+CER_gain <- matrix(NaN, nrow = (ncol(FC_PR)+1), ncol = NROW(h))
+Sharpe <- matrix(NaN, nrow = (ncol(FC_PR)+2), ncol = NROW(h))
+
+for(j in 1:NROW(h)){
+  
+  R_PM_j <- R_PM[,j]
+  R_PM_j <- na.omit(R_PM_j)
+  ER_PM_j <- ER_PM[,j]
+  ER_PM_j <- na.omit(ER_PM_j)
+  CER_PM_j <- (12/h[j])*(mean(R_PM_j) - 0.5*RRA*sd(R_PM_j)^2)
+  Sharpe[1,j] <- sqrt((12/h[j]))*mean(ER_PM_j)/sd(ER_PM_j)
+  
+  for(i in 1:NCOL(FC_PR)){
+    
+    R_PR_i_j <- R_PR[,i,j]
+    R_PR_i_j <- na.omit(R_PR_i_j)
+    ER_PR_i_j <- ER_PR[,i,j]
+    ER_PR_i_j <- na.omit(ER_PR_i_j)
+    CER_PR_i_j <- (12/h[j])*(mean(R_PR_i_j) - 0.5*RRA*sd(R_PR_i_j)^2)
+    CER_gain[i,j] <- 100*(CER_PR_i_j - CER_PM_j)
+    Sharpe[i+1,j] <- sqrt((12/h[j]))*mean(ER_PR_i_j)/sd(ER_PR_i_j)
+    
+  }
+  
+  R_BH_j <- R_BH[,j]
+  R_BH_j <- na.omit(R_BH_j)
+  ER_BH_j <- ER_BH[,j]
+  ER_BH_j <- na.omit(ER_BH_j)
+  CER_BH_j <- (12/h[j])*(mean(R_BH_j) - 0.5*RRA*sd(R_BH_j)^2)
+  CER_gain[NROW(CER_gain),j] <- 100*(CER_BH_j - CER_PM_j)
+  Sharpe[NROW(Sharpe),j] <- sqrt((12/h[j]))*mean(ER_BH_j)/sd(ER_BH_j)
+  
+}
+
+# Compute CER gains and Sharpe ratios for Global Financial Crisis period -------
+GFC_start <- (2006-1989)*12 + 1
+CER_gain_GFC <- matrix(NaN, nrow = (ncol(FC_PR)+1), ncol = NROW(h))
+Sharpe_GFC <- matrix(NaN, nrow = (ncol(FC_PR)+2), ncol = NROW(h))
+
+for(j in 1:NROW(h)){
+  
+  R_PM_j <- R_PM[GFC_start:NROW(R_PM),j]
+  R_PM_j <- na.omit(R_PM_j)
+  ER_PM_j <- ER_PM[GFC_start:NROW(ER_PM),j]
+  ER_PM_j <- na.omit(ER_PM_j)
+  CER_PM_j <- (12/h[j])*(mean(R_PM_j) - 0.5*RRA*sd(R_PM_j)^2)
+  Sharpe_GFC[1,j] <- sqrt((12/h[j]))*mean(ER_PM_j)/sd(ER_PM_j)
+  
+  for(i in 1:NCOL(FC_PR)){
+    
+    R_PR_i_j <- R_PR[GFC_start:NROW(R_PR),i,j]
+    R_PR_i_j <- na.omit(R_PR_i_j)
+    ER_PR_i_j <- ER_PR[GFC_start:NROW(ER_PR),i,j]
+    ER_PR_i_j <- na.omit(ER_PR_i_j)
+    CER_PR_i_j <- (12/h[j])*(mean(R_PR_i_j) - 0.5*RRA*sd(R_PR_i_j)^2)
+    CER_gain_GFC[i,j] <- 100*(CER_PR_i_j - CER_PM_j)
+    Sharpe_GFC[i+1,j] <- sqrt((12/h[j]))*mean(ER_PR_i_j)/sd(ER_PR_i_j)
+    
+  }
+  
+  R_BH_j <- R_BH[GFC_start:NROW(R_BH),j]
+  R_BH_j <- na.omit(R_BH_j)
+  ER_BH_j <- ER_BH[GFC_start:NROW(ER_BH),j]
+  ER_BH_j <- na.omit(ER_BH_j)
+  CER_BH_j <- (12/h[j])*(mean(R_BH_j) - 0.5*RRA*sd(R_BH_j)^2)
+  CER_gain_GFC[NROW(CER_gain_GFC),j] <- 100*(CER_BH_j - CER_PM_j)
+  Sharpe_GFC[NROW(Sharpe_GFC),j] <- sqrt((12/h[j]))*mean(ER_BH_j)/sd(ER_BH_j)
+  
+}
