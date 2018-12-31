@@ -86,19 +86,48 @@ for(i in seq_along(h)){
 # Load function Aset Allocation ------------------------------------------------
 source("Asset_Allocation_Function.R")
 
-asset_allocation(equity_risk, GW_predictor[,1], 1989, 1972, 10, h, 3, -0.5, 1.5)
+results_list <- list()
+results <- matrix(0, nrow = 14, ncol = 9)
 
-CER_BENCH_results
-CER_gain_results
-CER_PREDIC_results
-Std_results
-mean_results
+col_names <- c("mu_pred", "sd_pred", "Sr_pred",
+               "mu_bench", "sd_bench", "Sr_bench",
+               "CER_pred", "CER_bench", "CER_Var")
 
-results <- matrix(0, nrow = 1, ncol = 10)
+row_names <- c("DP", "DY", "EP", "DE", "RVOL", "BM", "NTIS", "TBL", "LTY", 
+               "LTR", "TMS", "DFY", "DFR", "INFL") 
 
-for(i in 1:1){
-  
-  results
-  
+metrics <- list(mean_results, Std_results, Sharpe_results, 
+                mean_results, Std_results, Sharpe_results, 
+                CER_PREDIC_results, CER_BENCH_results, CER_gain_results)
+
+h <- c(1, 3, 6, 12)
+
+for(z in 1:4){
+  for(i in 1:14){
+    
+    asset_allocation(equity_risk, GW_predictor[,i], 1989, 1972, 10, h, 3, -0.5, 1.5)
+    
+
+    for(j in 1:9){
+        
+      aux_metrics <- metrics[[j]]
+        
+      if(j <= 3){
+          
+        results[i,j] <- aux_metrics[2,z]
+          
+      }else{
+          
+        results[i,j] <- aux_metrics[1,z]
+      }
+    
+    colnames(results) <- col_names
+    row.names(results) <- row_names
+      
+    results_list[[z]] <- results    
+      
+    }
+  }
 }
 
+round(results, 3)
