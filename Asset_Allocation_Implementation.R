@@ -96,9 +96,7 @@ col_names <- c("mu_pred", "sd_pred", "Sr_pred",
 row_names <- c("DP", "DY", "EP", "DE", "RVOL", "BM", "NTIS", "TBL", "LTY", 
                "LTR", "TMS", "DFY", "DFR", "INFL") 
 
-metrics <- list(mean_results, Std_results, Sharpe_results, 
-                mean_results, Std_results, Sharpe_results, 
-                CER_PREDIC_results, CER_BENCH_results, CER_gain_results)
+list_nanes <- c("Horizon_1", "Horizon_2", "Horizon_3", "Horizon_4")
 
 h <- c(1, 3, 6, 12)
 
@@ -107,8 +105,11 @@ for(z in 1:4){
     
     asset_allocation(equity_risk, GW_predictor[,i], 1989, 1972, 10, h, 3, -0.5, 1.5)
     
-
-    for(j in 1:9){
+    metrics <- list(mean_results, Std_results, Sharpe_results, 
+                    mean_results, Std_results, Sharpe_results, 
+                    CER_PREDIC_results, CER_BENCH_results, CER_gain_results)
+    
+      for(j in 1:9){
         
       aux_metrics <- metrics[[j]]
         
@@ -119,15 +120,18 @@ for(z in 1:4){
       }else{
           
         results[i,j] <- aux_metrics[1,z]
+        
       }
-    
-    colnames(results) <- col_names
-    row.names(results) <- row_names
-      
-    results_list[[z]] <- results    
-      
     }
   }
+  
+  colnames(results) <- col_names
+  row.names(results) <- row_names
+  
+  results_list[z] <- results   
+  
 }
 
-round(results, 3)
+names(results_list) <- list_nanes
+
+lapply(results_list, function(x) round(x, 3))
