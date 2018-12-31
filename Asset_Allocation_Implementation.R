@@ -128,7 +128,7 @@ for(z in 1:4){
   colnames(results) <- col_names
   row.names(results) <- row_names
   
-  results_list[z] <- results   
+  results_list[[z]] <- results   
   
 }
 
