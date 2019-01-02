@@ -5,7 +5,7 @@
 #'---
 
 if(!require("pacman")) install.packages("pacman")
-p_load("tidyverse", "xlsx")
+p_load("tidyverse", "xlsx", "rootSolve")
 
 GW_dataset <- read.xlsx("data/Returns_short_interest_data.xlsx", 
                         sheetName = "GW variables") 
@@ -85,13 +85,12 @@ for(i in seq_along(h)){
 
 # Load function Aset Allocation ------------------------------------------------
 source("Asset_Allocation_Function.R")
+source("Quadratic_Solve_Function.R")
 
 results_list <- list()
-results <- matrix(0, nrow = 14, ncol = 9)
+results <- matrix(0, nrow = 14, ncol = 2)
 
-col_names <- c("mu_pred", "sd_pred", "Sr_pred",
-               "mu_bench", "sd_bench", "Sr_bench",
-               "CER_pred", "CER_bench", "CER_Var")
+col_names <- c("Sharpe", "CER")
 
 row_names <- c("DP", "DY", "EP", "DE", "RVOL", "BM", "NTIS", "TBL", "LTY", 
                "LTR", "TMS", "DFY", "DFR", "INFL") 
@@ -105,20 +104,18 @@ for(z in 1:4){
     
     asset_allocation(equity_risk, GW_predictor[,i], 1989, 1972, 10, h, 3, -0.5, 1.5)
     
-    metrics <- list(mean_results, Std_results, Sharpe_results, 
-                    mean_results, Std_results, Sharpe_results, 
-                    CER_PREDIC_results, CER_BENCH_results, CER_gain_results)
+    metrics <- list(Sharpe_results, CER_gain_results)
     
-      for(j in 1:9){
-        
+    for(j in 1:2){
+      
       aux_metrics <- metrics[[j]]
+      
+      if(j == 1){
         
-      if(j <= 3){
-          
         results[i,j] <- aux_metrics[2,z]
-          
+        
       }else{
-          
+        
         results[i,j] <- aux_metrics[1,z]
         
       }
@@ -134,4 +131,5 @@ for(z in 1:4){
 
 names(results_list) <- list_nanes
 
-lapply(results_list, function(x) round(x, 3))
+do.call(cbind,(lapply(results_list, function(x) round(x, 3))))
+

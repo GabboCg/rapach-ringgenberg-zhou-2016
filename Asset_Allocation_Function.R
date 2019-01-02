@@ -1,7 +1,7 @@
 #'---
 #' author: Gabriel Cabrera 
 #' title: Asset Allocation Function
-#' date: 30-12-2018  (last updated: 30-12-2018)
+#' date: 30-12-2018  (last updated: 02-91-2019)
 #'---
 
 asset_allocation <- function(forecast_variable, predictor, in_sample_end, 
@@ -112,11 +112,7 @@ asset_allocation <- function(forecast_variable, predictor, in_sample_end,
   # Compute CER gains and Sharpe ratios for full OOS period --------------------
   CER_gain <- matrix(NaN, nrow = (ncol(FC_PR)+1), ncol = NROW(h))
   Sharpe <- matrix(NaN, nrow = (ncol(FC_PR)+2), ncol = NROW(h))
-  mean <- matrix(NaN, nrow = (ncol(FC_PR)+2), ncol = NROW(h)) 
-  st_deviation <- matrix(NaN, nrow = (ncol(FC_PR)+2), ncol = NROW(h)) 
-  CER_PREDIC <- matrix(NaN, nrow = (ncol(FC_PR)), ncol = NROW(h))
-  CER_BENCH <- matrix(NaN, nrow = (ncol(FC_PR)), ncol = NROW(h))
-  
+
   for(j in 1:NROW(h)){
     
     R_PM_j <- R_PM[,j]
@@ -125,11 +121,7 @@ asset_allocation <- function(forecast_variable, predictor, in_sample_end,
     ER_PM_j <- na.omit(ER_PM_j)
     CER_PM_j <- (12/h[j])*(mean(R_PM_j) - 0.5*RRA*sd(R_PM_j)^2)
     Sharpe[1,j] <- sqrt((12/h[j]))*mean(ER_PM_j)/sd(ER_PM_j)
-    
-    mean[1,j] <- mean(ER_PM_j)  
-    st_deviation[1,j] <- sd(ER_PM_j)  
-    CER_BENCH[1,j] <- CER_PM_j 
-    
+  
     for(i in 1:NCOL(FC_PR)){
       
       R_PR_i_j <- R_PR[,i,j]
@@ -139,11 +131,7 @@ asset_allocation <- function(forecast_variable, predictor, in_sample_end,
       CER_PR_i_j <- (12/h[j])*(mean(R_PR_i_j) - 0.5*RRA*sd(R_PR_i_j)^2)
       CER_gain[i,j] <- 100*(CER_PR_i_j - CER_PM_j)
       Sharpe[i+1,j] <- sqrt((12/h[j]))*mean(ER_PR_i_j)/sd(ER_PR_i_j)
-      
-      mean[i+1,j] <- mean(ER_PR_i_j)  
-      st_deviation[i+1,j] <- sd(ER_PR_i_j)  
-      CER_PREDIC[i,j] <- CER_PR_i_j
-      
+    
     }
     
     R_BH_j <- R_BH[,j]
@@ -154,16 +142,9 @@ asset_allocation <- function(forecast_variable, predictor, in_sample_end,
     CER_gain[NROW(CER_gain),j] <- 100*(CER_BH_j - CER_PM_j)
     Sharpe[NROW(Sharpe),j] <- sqrt((12/h[j]))*mean(ER_BH_j)/sd(ER_BH_j)
     
-    mean[NROW(mean),j] <- mean(ER_BH_j)  
-    st_deviation[NROW(st_deviation),j] <- sd(ER_BH_j)  
-    
   }
   
+  # results
   CER_gain_results <<- CER_gain
   Sharpe_results <<- Sharpe 
-  mean_results <<- mean
-  Std_results <<- st_deviation  
-  CER_BENCH_results <<-  CER_BENCH  
-  CER_PREDIC_results <<-  CER_PREDIC
-  
 }
